@@ -235,6 +235,23 @@ async function fetchSheetData(url) {
   return data;
 }
 
+// ── Read config tab from the same spreadsheet ─────────────────────────────
+async function fetchConfig(rawUrl) {
+  try {
+    const r = await fetch(toCSVUrl(rawUrl, 'config'));
+    if (!r.ok) return {};
+    const rows = parseCSV(await r.text());
+    const cfg = {};
+    const s = (rows[0] && rows[0][0] && rows[0][0].toLowerCase() === 'key') ? 1 : 0;
+    for (let i = s; i < rows.length; i++) {
+      const k = (rows[i][0] || '').trim().toLowerCase();
+      const v = (rows[i][1] || '').trim();
+      if (k) cfg[k] = v;
+    }
+    return cfg;
+  } catch (_) { return {}; }
+}
+
 // ── UI Navigation ────────────────────────────────────────────────────────────
 function showPanel(name) {
   ['setup-panel', 'select-panel', 'game-panel', 'win-panel'].forEach(id => {
@@ -279,9 +296,9 @@ async function loadSheet() {
   $('btn-load').disabled = true;
 
   try {
-    const sheetName = $('sheet-name').value.trim() || 'Sheet1';
-    const csvUrl = toCSVUrl(url, sheetName);
-    const data = await fetchSheetData(csvUrl);
+    const cfg = await fetchConfig(url);
+    const sheetName = cfg.game_sheet || $('sheet-name').value.trim() || 'Sheet1';
+    const data = await fetchSheetData(toCSVUrl(url, sheetName));
     state.images = data;
     renderSelectGrid();
     showPanel('select');
@@ -938,6 +955,25 @@ function hidePreview() {
 }
 
 // ── Auto init ────────────────────────────────────────────────────────────────
-window.addEventListener('DOMContentLoaded', () => {
+window.addEventListener('DOMContentLoaded', async () => {
   setDiff(3);
+
+  // Auto-load from global Sheet URL
+  const savedUrl = localStorage.getItem('gamehub_sheet_url') || '';
+  if (savedUrl) {
+    $('sheet-url').value = savedUrl;
+    showLoading(true);
+    try {
+      const cfg = await fetchConfig(savedUrl);
+      const sheet = cfg.game_sheet || $('sheet-name').value || 'jigsaw';
+      const data = await fetchSheetData(toCSVUrl(savedUrl, sheet));
+      state.images = data;
+      renderSelectGrid();
+      showPanel('select');
+    } catch(e) {
+      showError('⚠️ โหลดชีตล่าสุดไม่สำเร็จ กรุณากด "โหลดเกม" อีกครั้ง');
+    } finally {
+      showLoading(false);
+    }
+  }
 });

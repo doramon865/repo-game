@@ -64,6 +64,23 @@ async function fetchSheetData(url){
   return data;
 }
 
+// ── Read config tab ──────────────────────────────────────────────────────
+async function fetchConfig(raw){
+  try{
+    const r=await fetch(toCSVUrl(raw,'config'));
+    if(!r.ok) return {};
+    const rows=parseCSV(await r.text());
+    const cfg={};
+    const s=(rows[0]&&rows[0][0]&&rows[0][0].toLowerCase()==='key')?1:0;
+    for(let i=s;i<rows.length;i++){
+      const k=(rows[i][0]||'').trim().toLowerCase();
+      const v=(rows[i][1]||'').trim();
+      if(k) cfg[k]=v;
+    }
+    return cfg;
+  }catch(_){ return {}; }
+}
+
 // ── UI helpers ───────────────────────────────────────────────────────────────
 function showPanel(name){
   ['setup-panel','game-panel','win-panel'].forEach(id=>{
@@ -80,7 +97,9 @@ async function loadSheet(){
   if(!url){ showError('กรุณาใส่ URL'); return; }
   clearError(); showLoading(true); $('btn-load').disabled=true;
   try{
-    const data=await fetchSheetData(toCSVUrl(url,$('sheet-name').value||'Sheet1'));
+    const cfg=await fetchConfig(url);
+    const sheet=cfg.game_sheet||$('sheet-name').value||'Sheet1';
+    const data=await fetchSheetData(toCSVUrl(url,sheet));
     startGame(data);
   }catch(e){ showError('❌ '+e.message); }
   finally{ showLoading(false); $('btn-load').disabled=false; }
@@ -196,4 +215,20 @@ document.addEventListener('keydown', e=>{
   if(e.key===' '||e.key==='Enter'){ e.preventDefault(); flipCard(); }
   if(e.key==='ArrowRight'){ e.preventDefault(); markCard(true); }
   if(e.key==='ArrowLeft'){ e.preventDefault(); markCard(false); }
+});
+
+// ── Auto-load from global Sheet URL ──────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', async () => {
+  const savedUrl = localStorage.getItem('gamehub_sheet_url') || '';
+  if (savedUrl) {
+    $('sheet-url').value = savedUrl;
+    try {
+      const cfg = await fetchConfig(savedUrl);
+      const sheet = cfg.game_sheet || $('sheet-name').value || 'flashcard';
+      const data = await fetchSheetData(toCSVUrl(savedUrl, sheet));
+      startGame(data);
+    } catch(e) {
+      showError('⚠️ โหลดชีตล่าสุดไม่สำเร็จ กรุณากด "โหลดเกม" อีกครั้ง');
+    }
+  }
 });

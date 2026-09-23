@@ -76,6 +76,21 @@ async function fetchSheetData(url){
   if(data.length<2) throw new Error('ต้องมีข้อมูลอย่างน้อย 2 แถว');
   return data;
 }
+async function fetchConfig(raw){
+  try{
+    const r=await fetch(toCSVUrl(raw,'config'));
+    if(!r.ok) return {};
+    const rows=parseCSV(await r.text());
+    const cfg={};
+    const s=(rows[0]&&rows[0][0]&&rows[0][0].toLowerCase()==='key')?1:0;
+    for(let i=s;i<rows.length;i++){
+      const k=(rows[i][0]||'').trim().toLowerCase();
+      const v=(rows[i][1]||'').trim();
+      if(k) cfg[k]=v;
+    }
+    return cfg;
+  }catch(_){ return {}; }
+}
 
 // ── UI Helpers ─────────────────────────────────────────────────────────────────
 function showPanel(name){
@@ -112,7 +127,9 @@ async function loadSheet(){
   if(!url){showError('กรุณาใส่ URL');return;}
   clearError();showLoading(true);$('btn-load').disabled=true;
   try{
-    const data=await fetchSheetData(toCSVUrl(url,$('sheet-name').value||'Sheet1'));
+    const cfg=await fetchConfig(url);
+    const sheet=cfg.game_sheet||$('sheet-name').value||'Sheet1';
+    const data=await fetchSheetData(toCSVUrl(url,sheet));
     state.mode=$('mode-select').value;
     startGame(data);
   }catch(e){showError('❌ '+e.message);}
@@ -394,3 +411,20 @@ function goBack(){
   $('falling-wrap').innerHTML='';
   showPanel('setup');
 }
+
+// ── Auto-load from global Sheet URL ──────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', async () => {
+  const savedUrl = localStorage.getItem('gamehub_sheet_url') || '';
+  if (savedUrl) {
+    $('sheet-url').value = savedUrl;
+    try {
+      const cfg = await fetchConfig(savedUrl);
+      const sheet = cfg.game_sheet || $('sheet-name').value || 'wordrain';
+      const data = await fetchSheetData(toCSVUrl(savedUrl, sheet));
+      state.mode = $('mode-select').value;
+      startGame(data);
+    } catch(e) {
+      showError('⚠️ โหลดชีตล่าสุดไม่สำเร็จ กรุณากด "โหลดเกม" อีกครั้ง');
+    }
+  }
+});

@@ -7,8 +7,50 @@
   <meta name="description" content="รวมเกมการศึกษาเชื่อมต่อ Google Sheet เล่นได้เลย ไม่ต้อง login"/>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-  <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Orbitron:wght@700;900&family=IBM+Plex+Sans:wght@300;400;500;600;700&family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="hub.css"/>
+  <style>
+    .hub-sheet-bar {
+      max-width: 680px;
+      margin: 0 auto 2rem;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 16px;
+      padding: 1.2rem 1.5rem;
+      display: flex;
+      gap: .75rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .hub-sheet-bar label { font-size:.85rem; color:#94a3b8; white-space:nowrap; }
+    .hub-sheet-bar input {
+      flex: 1;
+      min-width: 0;
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 10px;
+      padding: .55rem 1rem;
+      color: #f1f5f9;
+      font-size: .9rem;
+      outline: none;
+      transition: border-color .2s;
+    }
+    .hub-sheet-bar input:focus { border-color: #8b5cf6; }
+    .hub-sheet-save-btn {
+      background: linear-gradient(135deg,#8b5cf6,#6d28d9);
+      color:#fff;
+      border:none;
+      border-radius:10px;
+      padding:.55rem 1.1rem;
+      font-size:.88rem;
+      font-weight:600;
+      cursor:pointer;
+      white-space:nowrap;
+      transition:opacity .2s;
+    }
+    .hub-sheet-save-btn:hover { opacity:.85; }
+    .hub-sheet-status { font-size:.78rem; width:100%; color:#10b981; display:none; }
+  </style>
 </head>
 <body>
 
@@ -35,6 +77,14 @@
     <h1 class="hero-title">เลือกเกมที่ต้องการเล่น</h1>
     <p class="hero-sub">ทุกเกมโหลดข้อมูลจาก <strong>Google Sheet</strong> ของคุณ ไม่ต้อง Login</p>
   </section>
+
+  <!-- Global Sheet URL Bar -->
+  <div class="hub-sheet-bar" id="hub-sheet-bar">
+    <label for="hub-sheet-url">🔗 Google Sheet URL (ใช้กับทุกเกม)</label>
+    <input type="url" id="hub-sheet-url" placeholder="https://docs.google.com/spreadsheets/d/..." />
+    <button class="hub-sheet-save-btn" onclick="saveHubSheet()">💾 บันทึก</button>
+    <span class="hub-sheet-status" id="hub-sheet-status">✅ บันทึกแล้ว!</span>
+  </div>
 
   <section class="games-grid">
 
@@ -141,7 +191,29 @@
 
 </main>
 
+<script>
+  const GLOBAL_KEY = 'gamehub_sheet_url';
+  const DEFAULT_SHEET_URL = 'https://docs.google.com/spreadsheets/d/1oJ_AqoFXZ26APVuexjiQO6nK2GYDTiOVFeA5XYiTCk4/edit?gid=1784331278#gid=1784331278';
 
+  function saveHubSheet() {
+    const url = document.getElementById('hub-sheet-url').value.trim();
+    if (!url) return;
+    localStorage.setItem(GLOBAL_KEY, url);
+    const st = document.getElementById('hub-sheet-status');
+    st.style.display = 'block';
+    setTimeout(() => st.style.display = 'none', 2000);
+  }
+
+  // Restore on load — ถ้ายังไม่มีใน localStorage ให้ใช้ default URL
+  window.addEventListener('DOMContentLoaded', () => {
+    const saved = localStorage.getItem(GLOBAL_KEY) || DEFAULT_SHEET_URL;
+    document.getElementById('hub-sheet-url').value = saved;
+    // Auto-save default ถ้ายังไม่เคยบันทึก
+    if (!localStorage.getItem(GLOBAL_KEY)) {
+      localStorage.setItem(GLOBAL_KEY, DEFAULT_SHEET_URL);
+    }
+  });
+</script>
 
 </body>
 </html>

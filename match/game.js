@@ -125,6 +125,28 @@ function parseCSV(text) {
   return rows;
 }
 
+// ── Read config tab from the same spreadsheet ─────────────────────────────────
+// Config tab format: 2 columns — key | value
+// Supported keys: game_sheet, title
+async function fetchConfig(rawUrl) {
+  try {
+    const csvUrl = toCSVUrl(rawUrl, 'config');
+    const resp = await fetch(csvUrl);
+    if (!resp.ok) return {};
+    const rows = parseCSV(await resp.text());
+    const cfg = {};
+    const startRow = (rows[0] && rows[0][0] && rows[0][0].toLowerCase() === 'key') ? 1 : 0;
+    for (let i = startRow; i < rows.length; i++) {
+      const k = (rows[i][0] || '').trim().toLowerCase();
+      const v = (rows[i][1] || '').trim();
+      if (k) cfg[k] = v;
+    }
+    return cfg;
+  } catch (_) {
+    return {}; // config tab is optional — silently ignore
+  }
+}
+
 // ── Fetch & Parse Google Sheet ──────────────────────────────────────────────
 async function fetchSheetData(csvUrl) {
   const resp = await fetch(csvUrl);
@@ -167,14 +189,23 @@ async function loadSheet() {
   const url = $('sheet-url').value.trim();
   if (!url) { showError('กรุณาใส่ URL ของ Google Sheet'); return; }
 
-  const sheetName = $('sheet-name').value.trim() || 'Sheet1';
   clearError();
   showLoading(true);
   $('btn-load').disabled = true;
 
   try {
+    // อ่าน config tab ก่อน (ถ้าไม่มี config tab ก็ใช้ค่า default)
+    const cfg = await fetchConfig(url);
+    const sheetName = cfg.game_sheet
+                   || $('sheet-name').value.trim()
+                   || 'Sheet1';
+    $('sheet-name').value = sheetName;
+
     const csvUrl = toCSVUrl(url, sheetName);
     const data = await fetchSheetData(csvUrl);
+    // ✅ บันทึก URL และชื่อ Sheet ลง localStorage
+    localStorage.setItem('matchit_sheet_url', url);
+    localStorage.setItem('matchit_sheet_name', sheetName);
     startGame(data);
   } catch (err) {
     showError('❌ ' + (err.message || 'เกิดข้อผิดพลาดในการโหลดข้อมูล'));
@@ -695,4 +726,34 @@ function showLoading(show) {
 // ── Resize Connector on Window Resize ─────────────────────────────────────────
 window.addEventListener('resize', () => {
   if ($('game-panel').style.display !== 'none') updateConnectorSVG();
+});
+
+// ── Restore saved Sheet URL on page load (and auto-load if available) ────────
+window.addEventListener('DOMContentLoaded', async () => {
+  // ดึง URL จาก global key ก่อน ถ้าไม่มีค่อยดึงจาก key เดิม
+  const savedUrl  = localStorage.getItem('gamehub_sheet_url')
+                 || localStorage.getItem('matchit_sheet_url') || '';
+  const savedName = localStorage.getItem('matchit_sheet_name') || 'match';
+  if (savedUrl)  $('sheet-url').value  = savedUrl;
+  if (savedName) $('sheet-name').value = savedName;
+
+  // Auto-load the game immediately if we have a saved URL
+  if (savedUrl) {
+    clearError();
+    showLoading(true);
+    try {
+      // อ่าน config tab เพื่อรู้ว่าจะโหลด sheet tab ไหน
+      const cfg = await fetchConfig(savedUrl);
+      const sheetName = cfg.game_sheet || savedName;
+      $('sheet-name').value = sheetName;
+
+      const csvUrl = toCSVUrl(savedUrl, sheetName);
+      const data   = await fetchSheetData(csvUrl);
+      startGame(data);
+    } catch (err) {
+      showError('⚠️ โหลดชีตล่าสุดไม่สำเร็จ กรุณากด "โหลดเกม" อีกครั้ง');
+    } finally {
+      showLoading(false);
+    }
+  }
 });
