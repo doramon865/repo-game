@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🎮 เกมจับคู่ — Match It!</title>
+  <meta name="description" content="เกมจับคู่ภาพกับข้อความ โหลดข้อมูลจาก Google Sheet แบบ Real-time" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Orbitron:wght@700;900&family=IBM+Plex+Sans:wght@300;400;500;600;700&family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- Background Orbs -->
+  <div class="bg-orbs" aria-hidden="true">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+  </div>
+
+  <!-- Header -->
+  <header class="header">
+    <div class="header-inner">
+      <div class="logo">
+        <a href="../" class="home-btn" title="กลับหน้าหลัก">🏠</a>
+        <span class="logo-icon">🧩</span>
+        <span class="logo-text">Match<span class="accent">It!</span></span>
+      </div>
+      <div class="stats-bar">
+        <div class="stat-chip" id="stat-score">
+          <span class="stat-icon">⭐</span>
+          <span class="stat-label">คะแนน</span>
+          <span class="stat-value" id="score-val">0</span>
+        </div>
+        <div class="stat-chip" id="stat-time">
+          <span class="stat-icon">⏱️</span>
+          <span class="stat-label">เวลา</span>
+          <span class="stat-value" id="timer-val">0:00</span>
+        </div>
+        <div class="stat-chip" id="stat-tries">
+          <span class="stat-icon">🎯</span>
+          <span class="stat-label">ครั้ง</span>
+          <span class="stat-value" id="tries-val">0</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="main-container">
+
+    <!-- Setup Panel -->
+    <section class="setup-panel" id="setup-panel">
+      <div class="setup-card">
+        <div class="setup-icon">📊</div>
+        <h1 class="setup-title">เชื่อมต่อ Google Sheet</h1>
+        <p class="setup-desc">
+          วาง URL ของ Google Sheet ที่เปิดเป็น <strong>Public</strong> ด้านล่าง<br />
+          ชีตต้องมี <strong>2 คอลัมน์</strong>: <code>image_url</code> และ <code>label</code>
+        </p>
+
+        <div class="sheet-example">
+          <div class="example-header">📋 ตัวอย่างโครงสร้างชีต</div>
+          <table class="example-table">
+            <thead>
+              <tr><th>image_url</th><th>label</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>https://i.imgur.com/abc.jpg</td><td>แมว</td></tr>
+              <tr><td>https://i.imgur.com/xyz.jpg</td><td>หมา</td></tr>
+              <tr><td>https://i.imgur.com/def.jpg</td><td>นก</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="input-group">
+          <label for="sheet-url" class="input-label">🔗 Google Sheet URL</label>
+          <input
+            type="url"
+            id="sheet-url"
+            class="sheet-input"
+            placeholder="https://docs.google.com/spreadsheets/d/YOUR_ID/..."
+          />
+          <div class="input-hint">
+            💡 ต้องแชร์เป็น <strong>Anyone with the link</strong> ก่อน
+          </div>
+        </div>
+
+        <div class="input-group">
+          <label for="sheet-name" class="input-label">📄 ชื่อ Sheet (ไม่บังคับ)</label>
+          <input
+            type="text"
+            id="sheet-name"
+            class="sheet-input"
+            placeholder="Sheet1"
+            value="Sheet1"
+          />
+        </div>
+
+        <div class="demo-divider">
+          <span>— หรือ —</span>
+        </div>
+
+        <button class="btn btn-outline" id="btn-demo" onclick="loadDemo()">
+          🎮 ลองเล่นกับข้อมูลตัวอย่าง
+        </button>
+
+        <button class="btn btn-primary" id="btn-load" onclick="loadSheet()">
+          <span class="btn-icon">🚀</span> โหลดเกม
+        </button>
+
+        <div class="error-box" id="error-box" style="display:none"></div>
+        <div class="loading-box" id="loading-setup" style="display:none">
+          <div class="spinner"></div>
+          <span>กำลังโหลดข้อมูล...</span>
+        </div>
+
+        <div class="how-to">
+          <div class="how-title">📌 วิธีทำให้ Sheet เป็น Public CSV URL</div>
+          <ol class="how-steps">
+            <li>เปิด Google Sheet → คลิก <strong>File → Share → Publish to web</strong></li>
+            <li>เลือก Sheet ที่ต้องการ → เลือกรูปแบบเป็น <strong>CSV</strong></li>
+            <li>คลิก <strong>Publish</strong> แล้วคัดลอก URL ที่ได้</li>
+            <li>หรือนำ Sheet ID ไปใส่ใน URL รูปแบบ:<br/>
+              <code>https://docs.google.com/spreadsheets/d/<em>ID</em>/export?format=csv&amp;sheet=Sheet1</code>
+            </li>
+          </ol>
+        </div>
+      </div>
+    </section>
+
+    <!-- Game Panel -->
+    <section class="game-panel" id="game-panel" style="display:none">
+      <div class="game-header">
+        <div class="progress-info">
+          <span id="progress-text">จับคู่ 0 / 0 คู่</span>
+          <div class="progress-bar-wrap">
+            <div class="progress-bar" id="progress-bar"></div>
+          </div>
+        </div>
+        <div class="game-actions">
+          <button class="btn btn-sm btn-ghost" id="btn-shuffle" onclick="shuffleCards()">🔀 สลับการ์ด</button>
+          <button class="btn btn-sm btn-ghost" id="btn-restart" onclick="restartGame()">🔄 เริ่มใหม่</button>
+          <button class="btn btn-sm btn-ghost" id="btn-back" onclick="goBack()">⚙️ ตั้งค่า</button>
+        </div>
+      </div>
+
+      <div class="board-wrap">
+        <!-- Image Cards (Left) -->
+        <div class="card-column" id="col-images">
+          <div class="col-header">
+            <span class="col-icon">🖼️</span>
+            <span class="col-title">ภาพ</span>
+          </div>
+          <div class="card-list" id="list-images"></div>
+        </div>
+
+        <!-- Connector Canvas -->
+        <div class="connector-wrap">
+          <svg id="connector-svg" class="connector-svg"></svg>
+        </div>
+
+        <!-- Label Cards (Right) -->
+        <div class="card-column" id="col-labels">
+          <div class="col-header">
+            <span class="col-icon">🏷️</span>
+            <span class="col-title">ข้อความ</span>
+          </div>
+          <div class="card-list" id="list-labels"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Win Panel -->
+    <section class="win-panel" id="win-panel" style="display:none">
+      <div class="win-card">
+        <div class="win-emoji" id="win-emoji">🎉</div>
+        <h2 class="win-title">ยอดเยี่ยม!</h2>
+        <p class="win-subtitle">คุณจับคู่ครบทุกคู่แล้ว!</p>
+        <div class="win-stats">
+          <div class="win-stat">
+            <div class="win-stat-icon">⭐</div>
+            <div class="win-stat-val" id="win-score">0</div>
+            <div class="win-stat-label">คะแนน</div>
+          </div>
+          <div class="win-stat">
+            <div class="win-stat-icon">⏱️</div>
+            <div class="win-stat-val" id="win-time">0:00</div>
+            <div class="win-stat-label">เวลา</div>
+          </div>
+          <div class="win-stat">
+            <div class="win-stat-icon">🎯</div>
+            <div class="win-stat-val" id="win-tries">0</div>
+            <div class="win-stat-label">จำนวนครั้ง</div>
+          </div>
+        </div>
+        <div class="win-buttons">
+          <button class="btn btn-primary" onclick="restartGame()">🔄 เล่นอีกครั้ง</button>
+          <button class="btn btn-outline" onclick="goBack()">📊 เปลี่ยนชีต</button>
+        </div>
+        <div class="confetti-wrap" id="confetti-wrap"></div>
+      </div>
+    </section>
+
+  </main>
+
+  <script src="game.js"></script>
+</body>
+</html>

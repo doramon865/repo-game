@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>🎮 Game Hub — เกมการศึกษา</title>
+  <meta name="description" content="รวมเกมการศึกษาเชื่อมต่อ Google Sheet เล่นได้เลย ไม่ต้อง login"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Orbitron:wght@700;900&family=IBM+Plex+Sans:wght@300;400;500;600;700&family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="hub.css"/>
+</head>
+<body>
+
+<div class="bg-orbs" aria-hidden="true">
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
+  <div class="orb orb-4"></div>
+</div>
+
+<header class="hub-header">
+  <div class="hub-header-inner">
+    <div class="hub-logo">
+      <span class="hub-logo-icon">🎮</span>
+      <span class="hub-logo-text">Game<span class="accent">Hub</span></span>
+    </div>
+    <p class="hub-logo-sub">เกมการศึกษา เชื่อมต่อ Google Sheet</p>
+  </div>
+</header>
+
+<main class="hub-main">
+
+  <section class="hero">
+    <h1 class="hero-title">เลือกเกมที่ต้องการเล่น</h1>
+    <p class="hero-sub">ทุกเกมโหลดข้อมูลจาก <strong>Google Sheet</strong> ของคุณ ไม่ต้อง Login</p>
+  </section>
+
+  <section class="games-grid">
+
+    <!-- Match It! -->
+    <a href="match/" class="game-card" id="card-match">
+      <div class="card-glow"></div>
+      <div class="card-icon-wrap">
+        <div class="card-icon">🧩</div>
+        <div class="card-icon-bg"></div>
+      </div>
+      <div class="card-badge" style="--badge-color:#8b5cf6">จับคู่</div>
+      <h2 class="card-title">Match It!</h2>
+      <p class="card-desc">จับคู่ภาพกับข้อความ รองรับ Drag & Drop และ Touch</p>
+      <div class="card-tags">
+        <span class="tag">🖼️ image_url</span>
+        <span class="tag">🏷️ label</span>
+      </div>
+      <div class="card-preview match-preview">
+        <div class="prev-img-card"></div>
+        <div class="prev-line"></div>
+        <div class="prev-lbl-card"></div>
+      </div>
+      <div class="card-play-btn">เล่นเลย <span>→</span></div>
+    </a>
+
+    <!-- Flash Card -->
+    <a href="flashcard/" class="game-card" id="card-flash">
+      <div class="card-glow"></div>
+      <div class="card-icon-wrap">
+        <div class="card-icon">🃏</div>
+        <div class="card-icon-bg"></div>
+      </div>
+      <div class="card-badge" style="--badge-color:#06b6d4">ท่องจำ</div>
+      <h2 class="card-title">Flash Card</h2>
+      <p class="card-desc">พลิกการ์ด 3D ดูคำถาม-คำตอบ ระบบ Spaced Repetition</p>
+      <div class="card-tags">
+        <span class="tag">❓ question</span>
+        <span class="tag">✅ answer</span>
+      </div>
+      <div class="card-preview flash-preview">
+        <div class="prev-flash-card">
+          <div class="prev-flash-front">Q</div>
+          <div class="prev-flash-back">A</div>
+        </div>
+      </div>
+      <div class="card-play-btn">เล่นเลย <span>→</span></div>
+    </a>
+
+    <!-- Word Rain -->
+    <a href="wordrain/" class="game-card" id="card-rain">
+      <div class="card-glow"></div>
+      <div class="card-icon-wrap">
+        <div class="card-icon">⏱️</div>
+        <div class="card-icon-bg"></div>
+      </div>
+      <div class="card-badge" style="--badge-color:#f59e0b">แอ็คชั่น</div>
+      <h2 class="card-title">Word Rain</h2>
+      <p class="card-desc">คำตกลงมา รีบพิมพ์/คลิกคำตอบก่อนถึงพื้น!</p>
+      <div class="card-tags">
+        <span class="tag">🔤 word</span>
+        <span class="tag">🌐 translation</span>
+      </div>
+      <div class="card-preview rain-preview">
+        <div class="rain-word rain-w1">cat</div>
+        <div class="rain-word rain-w2">dog</div>
+        <div class="rain-word rain-w3">fish</div>
+      </div>
+      <div class="card-play-btn">เล่นเลย <span>→</span></div>
+    </a>
+
+    <!-- Jigsaw -->
+    <a href="jigsaw/" class="game-card" id="card-jigsaw">
+      <div class="card-glow"></div>
+      <div class="card-icon-wrap">
+        <div class="card-icon">🧩</div>
+        <div class="card-icon-bg"></div>
+      </div>
+      <div class="card-badge" style="--badge-color:#10b981">ปริศนา</div>
+      <h2 class="card-title">Jigsaw</h2>
+      <p class="card-desc">ตัดภาพเป็นชิ้นส่วน ลากวางจัดให้ถูกตำแหน่ง!</p>
+      <div class="card-tags">
+        <span class="tag">🖼️ image_url</span>
+        <span class="tag">🏷️ label</span>
+      </div>
+      <div class="card-preview jigsaw-preview">
+        <div class="jig-grid">
+          <div class="jig-piece jig-p1"></div>
+          <div class="jig-piece jig-p2"></div>
+          <div class="jig-piece jig-p3"></div>
+          <div class="jig-piece jig-p4"></div>
+          <div class="jig-piece jig-p5 jig-empty"></div>
+          <div class="jig-piece jig-p6"></div>
+          <div class="jig-piece jig-p7"></div>
+          <div class="jig-piece jig-p8"></div>
+          <div class="jig-piece jig-p9"></div>
+        </div>
+      </div>
+      <div class="card-play-btn">เล่นเลย <span>→</span></div>
+    </a>
+
+  </section>
+
+
+
+</main>
+
+
+
+</body>
+</html>

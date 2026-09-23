@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>⏱️ Word Rain — คำตกฝน</title>
+  <meta name="description" content="คำตกลงมา รีบพิมพ์คำตอบก่อนถึงพื้น เชื่อมต่อ Google Sheet"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Orbitron:wght@700;900&family=IBM+Plex+Sans:wght@300;400;500;600;700&family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+
+<div class="bg-orbs" aria-hidden="true">
+  <div class="orb orb-1"></div><div class="orb orb-2"></div><div class="orb orb-3"></div>
+</div>
+
+<header class="header">
+  <div class="header-inner">
+    <div class="logo">
+      <a href="../" class="home-btn" title="กลับหน้าหลัก">🏠</a>
+      <span class="logo-icon">⏱️</span>
+      <span class="logo-text">Word<span class="accent">Rain</span></span>
+    </div>
+    <div class="stats-bar">
+      <div class="stat-chip"><span>⭐</span><span class="stat-label">คะแนน</span><span class="stat-value" id="score-val">0</span></div>
+      <div class="stat-chip"><span>❤️</span><span class="stat-label">ชีวิต</span><span class="stat-value" id="lives-val">3</span></div>
+      <div class="stat-chip"><span>⚡</span><span class="stat-label">Level</span><span class="stat-value" id="level-val">1</span></div>
+    </div>
+  </div>
+</header>
+
+<main class="main-container">
+
+  <!-- Setup -->
+  <section class="setup-panel" id="setup-panel">
+    <div class="setup-card">
+      <div class="setup-icon">⏱️</div>
+      <h1 class="setup-title">Word Rain</h1>
+      <p class="setup-desc">คำตกลงมาจากด้านบน รีบ<strong>พิมพ์คำแปล</strong>หรือ<strong>คลิกตัวเลือก</strong>ก่อนถึงพื้น!</p>
+      <div class="sheet-example">
+        <div class="example-header">📋 ตัวอย่างโครงสร้างชีต</div>
+        <table class="example-table">
+          <thead><tr><th>word</th><th>translation</th></tr></thead>
+          <tbody>
+            <tr><td>cat</td><td>แมว</td></tr>
+            <tr><td>dog</td><td>สุนัข</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="input-group">
+        <label class="input-label">🔗 Google Sheet URL</label>
+        <input type="url" id="sheet-url" class="sheet-input" placeholder="https://docs.google.com/spreadsheets/d/..."/>
+        <div class="input-hint">💡 แชร์เป็น <strong>Anyone with the link</strong> ก่อน</div>
+      </div>
+      <div class="input-group">
+        <label class="input-label">📄 ชื่อ Sheet (ไม่บังคับ)</label>
+        <input type="text" id="sheet-name" class="sheet-input" placeholder="Sheet1" value="Sheet1"/>
+      </div>
+      <div class="input-group">
+        <label class="input-label">🎮 โหมดตอบ</label>
+        <select id="mode-select" class="sheet-input">
+          <option value="choices">คลิกตัวเลือก (4 ตัวเลือก)</option>
+          <option value="type">พิมพ์คำตอบ</option>
+        </select>
+      </div>
+      <div class="demo-divider"><span>— หรือ —</span></div>
+      <button class="btn btn-outline" onclick="loadDemo()">🎮 ลองกับข้อมูลตัวอย่าง</button>
+      <button class="btn btn-primary" id="btn-load" onclick="loadSheet()"><span>🚀</span> โหลดเกม</button>
+      <div class="error-box" id="error-box" style="display:none"></div>
+      <div class="loading-box" id="loading-setup" style="display:none"><div class="spinner"></div><span>กำลังโหลด...</span></div>
+    </div>
+  </section>
+
+  <!-- Game -->
+  <section class="game-panel" id="game-panel" style="display:none">
+    <div class="rain-arena" id="rain-arena">
+      <div class="arena-ceiling"></div>
+      <div class="falling-words-wrap" id="falling-wrap"></div>
+      <div class="lives-display" id="lives-display">❤️❤️❤️</div>
+      <div class="combo-display" id="combo-display" style="display:none">🔥 ×<span id="combo-val">1</span></div>
+    </div>
+
+    <div class="answer-zone" id="answer-zone">
+      <!-- Choices mode -->
+      <div class="choices-wrap" id="choices-wrap">
+        <div class="choices-grid" id="choices-grid"></div>
+      </div>
+      <!-- Type mode -->
+      <div class="type-wrap" id="type-wrap" style="display:none">
+        <input type="text" id="type-input" class="type-input" placeholder="พิมพ์คำแปล..." autocomplete="off" autocorrect="off" spellcheck="false"/>
+        <button class="btn-submit" id="btn-submit" onclick="submitType()">✓</button>
+      </div>
+    </div>
+
+    <div class="game-bottom-bar">
+      <button class="btn btn-sm btn-ghost" onclick="pauseGame()" id="btn-pause">⏸️ หยุด</button>
+      <div class="level-progress-wrap">
+        <span class="level-label" id="level-progress-label">คำที่ 0/10 → Level ถัดไป</span>
+        <div class="level-bar-wrap"><div class="level-bar" id="level-bar"></div></div>
+      </div>
+      <button class="btn btn-sm btn-ghost" onclick="goBack()">⚙️ ตั้งค่า</button>
+    </div>
+
+    <!-- Pause Overlay -->
+    <div class="pause-overlay" id="pause-overlay" style="display:none">
+      <div class="pause-card">
+        <div class="pause-icon">⏸️</div>
+        <h3>หยุดพัก</h3>
+        <button class="btn btn-primary" onclick="resumeGame()">▶️ เล่นต่อ</button>
+        <button class="btn btn-outline" onclick="restartGame()">🔄 เริ่มใหม่</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Game Over -->
+  <section class="gameover-panel" id="gameover-panel" style="display:none">
+    <div class="win-card">
+      <div class="win-emoji" id="gameover-emoji">💀</div>
+      <h2 class="win-title" id="gameover-title">เกม Over!</h2>
+      <p class="win-subtitle" id="gameover-sub">ชีวิตหมดแล้ว</p>
+      <div class="win-stats">
+        <div class="win-stat"><div class="win-stat-icon">⭐</div><div class="win-stat-val" id="go-score">0</div><div class="win-stat-label">คะแนน</div></div>
+        <div class="win-stat"><div class="win-stat-icon">⚡</div><div class="win-stat-val" id="go-level">1</div><div class="win-stat-label">Level สูงสุด</div></div>
+        <div class="win-stat"><div class="win-stat-icon">🎯</div><div class="win-stat-val" id="go-correct">0</div><div class="win-stat-label">ตอบถูก</div></div>
+      </div>
+      <div class="win-buttons">
+        <button class="btn btn-primary" onclick="restartGame()">🔄 เล่นอีกครั้ง</button>
+        <button class="btn btn-outline" onclick="goBack()">📊 เปลี่ยนชีต</button>
+      </div>
+    </div>
+  </section>
+
+</main>
+<script src="game.js"></script>
+</body>
+</html>

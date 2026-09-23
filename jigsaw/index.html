@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>🧩 Jigsaw Puzzle — ปริศนาภาพ</title>
+  <meta name="description" content="ตัดภาพเป็นชิ้น ลากวางจัดให้ถูกตำแหน่ง เชื่อมต่อ Google Sheet"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Orbitron:wght@700;900&family=IBM+Plex+Sans:wght@300;400;500;600;700&family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+
+<div class="bg-orbs" aria-hidden="true">
+  <div class="orb orb-1"></div><div class="orb orb-2"></div><div class="orb orb-3"></div>
+</div>
+
+<header class="header">
+  <div class="header-inner">
+    <div class="logo">
+      <a href="../" class="home-btn" title="กลับหน้าหลัก">🏠</a>
+      <span class="logo-icon">🧩</span>
+      <span class="logo-text">Jig<span class="accent">saw</span></span>
+    </div>
+    <div class="stats-bar">
+      <div class="stat-chip"><span>⏱️</span><span class="stat-label">เวลา</span><span class="stat-value" id="timer-val">0:00</span></div>
+      <div class="stat-chip"><span>🔀</span><span class="stat-label">ย้าย</span><span class="stat-value" id="moves-val">0</span></div>
+      <div class="stat-chip"><span>🧩</span><span class="stat-label">ครบ</span><span class="stat-value" id="done-val">0/0</span></div>
+    </div>
+  </div>
+</header>
+
+<main class="main-container">
+
+  <!-- Setup -->
+  <section class="setup-panel" id="setup-panel">
+    <div class="setup-card">
+      <div class="setup-icon">🧩</div>
+      <h1 class="setup-title">Jigsaw Puzzle</h1>
+      <p class="setup-desc">โหลดภาพจาก Google Sheet แล้วตัดเป็นชิ้น <strong>ลากวางจัดให้ถูกตำแหน่ง!</strong></p>
+      <div class="sheet-example">
+        <div class="example-header">📋 ตัวอย่างโครงสร้างชีต</div>
+        <table class="example-table">
+          <thead><tr><th>image_url</th><th>label</th></tr></thead>
+          <tbody>
+            <tr><td>https://picsum.photos/seed/cat/600/400</td><td>🐱 แมว</td></tr>
+            <tr><td>https://picsum.photos/seed/dog/600/400</td><td>🐶 สุนัข</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="input-group">
+        <label class="input-label">🔗 Google Sheet URL</label>
+        <input type="url" id="sheet-url" class="sheet-input" placeholder="https://docs.google.com/spreadsheets/d/..."/>
+        <div class="input-hint">💡 แชร์เป็น <strong>Anyone with the link</strong> ก่อน</div>
+      </div>
+      <div class="input-group">
+        <label class="input-label">📄 ชื่อ Sheet (ไม่บังคับ)</label>
+        <input type="text" id="sheet-name" class="sheet-input" placeholder="Sheet1" value="Sheet1"/>
+      </div>
+      <div class="input-group">
+        <label class="input-label">🎮 ความยาก</label>
+        <div class="difficulty-row">
+          <button class="diff-btn active" id="diff-3" onclick="setDiff(3)">3×3 <span>ง่าย</span></button>
+          <button class="diff-btn" id="diff-4" onclick="setDiff(4)">4×4 <span>กลาง</span></button>
+          <button class="diff-btn" id="diff-5" onclick="setDiff(5)">5×5 <span>ยาก</span></button>
+        </div>
+      </div>
+      <div class="demo-divider"><span>— หรือ —</span></div>
+      <button class="btn btn-outline" onclick="loadDemo()">🎮 ลองกับข้อมูลตัวอย่าง</button>
+      <button class="btn btn-primary" id="btn-load" onclick="loadSheet()"><span>🚀</span> โหลดเกม</button>
+      <div class="error-box" id="error-box" style="display:none"></div>
+      <div class="loading-box" id="loading-setup" style="display:none"><div class="spinner"></div><span>กำลังโหลด...</span></div>
+    </div>
+  </section>
+
+  <!-- Image Select -->
+  <section class="select-panel" id="select-panel" style="display:none">
+    <div class="select-header">
+      <h2 class="select-title">🖼️ เลือกภาพที่ต้องการเล่น</h2>
+      <button class="btn btn-sm btn-ghost" onclick="goBack()">← กลับ</button>
+    </div>
+    <div class="image-grid" id="image-grid"></div>
+  </section>
+
+  <!-- Game -->
+  <section class="game-panel" id="game-panel" style="display:none">
+    <div class="game-header">
+      <div class="game-info">
+        <span class="game-img-label" id="game-img-label">—</span>
+      </div>
+      <div class="game-actions">
+        <button class="btn btn-sm btn-ghost" onclick="showPreview()" id="btn-preview">👁️ ดูภาพ</button>
+        <button class="btn btn-sm btn-ghost" onclick="shufflePieces()">🔀 สับใหม่</button>
+        <button class="btn btn-sm btn-ghost" onclick="goToSelect()">🖼️ เปลี่ยนภาพ</button>
+      </div>
+    </div>
+
+    <div class="puzzle-wrap">
+      <!-- Left: pieces tray -->
+      <div class="pieces-tray" id="pieces-tray">
+        <div class="tray-title">🎲 ชิ้นส่วน</div>
+        <div class="pieces-container" id="pieces-container"></div>
+      </div>
+
+      <!-- Right: board -->
+      <div class="board-area">
+        <div class="puzzle-board" id="puzzle-board"></div>
+        <div class="board-label">ลากชิ้นส่วนมาวางที่นี่</div>
+      </div>
+    </div>
+
+    <!-- Preview Modal -->
+    <div class="preview-modal" id="preview-modal" style="display:none" onclick="hidePreview()">
+      <div class="preview-inner">
+        <img id="preview-img" src="" alt="Preview"/>
+        <div class="preview-label" id="preview-label"></div>
+        <div class="preview-hint">คลิกที่ไหนก็ได้เพื่อปิด</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Win -->
+  <section class="win-panel" id="win-panel" style="display:none">
+    <div class="win-card">
+      <div class="win-emoji">🏆</div>
+      <h2 class="win-title">ยอดเยี่ยม!</h2>
+      <p class="win-subtitle">คุณต่อภาพสำเร็จแล้ว!</p>
+      <div class="win-complete-img-wrap">
+        <img class="win-complete-img" id="win-img" src="" alt="Complete"/>
+        <div class="win-complete-label" id="win-label"></div>
+      </div>
+      <div class="win-stats">
+        <div class="win-stat"><div class="win-stat-icon">⏱️</div><div class="win-stat-val" id="win-time">0:00</div><div class="win-stat-label">เวลา</div></div>
+        <div class="win-stat"><div class="win-stat-icon">🔀</div><div class="win-stat-val" id="win-moves">0</div><div class="win-stat-label">ย้าย</div></div>
+        <div class="win-stat"><div class="win-stat-icon">🧩</div><div class="win-stat-val" id="win-grid">3×3</div><div class="win-stat-label">Grid</div></div>
+      </div>
+      <div class="win-buttons">
+        <button class="btn btn-primary" onclick="goToSelect()">🖼️ เปลี่ยนภาพ</button>
+        <button class="btn btn-outline" onclick="replayGame()">🔄 เล่นอีกครั้ง</button>
+      </div>
+      <div class="confetti-wrap" id="confetti-wrap"></div>
+    </div>
+  </section>
+
+</main>
+<script src="game.js"></script>
+</body>
+</html>

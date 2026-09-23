@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>🃏 Flash Card — ท่องจำ</title>
+  <meta name="description" content="พลิกการ์ด 3D ท่องจำคำถาม-คำตอบ เชื่อมต่อ Google Sheet"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Orbitron:wght@700;900&family=IBM+Plex+Sans:wght@300;400;500;600;700&family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+
+<div class="bg-orbs" aria-hidden="true">
+  <div class="orb orb-1"></div><div class="orb orb-2"></div><div class="orb orb-3"></div>
+</div>
+
+<header class="header">
+  <div class="header-inner">
+    <div class="logo">
+      <a href="../" class="home-btn" title="กลับหน้าหลัก">🏠</a>
+      <span class="logo-icon">🃏</span>
+      <span class="logo-text">Flash<span class="accent">Card</span></span>
+    </div>
+    <div class="stats-bar">
+      <div class="stat-chip"><span class="stat-icon">✅</span><span class="stat-label">รู้แล้ว</span><span class="stat-value" id="known-val">0</span></div>
+      <div class="stat-chip"><span class="stat-icon">🔄</span><span class="stat-label">ยังไม่รู้</span><span class="stat-value" id="unknown-val">0</span></div>
+      <div class="stat-chip"><span class="stat-icon">📚</span><span class="stat-label">เหลือ</span><span class="stat-value" id="remain-val">0</span></div>
+    </div>
+  </div>
+</header>
+
+<main class="main-container">
+
+  <!-- Setup -->
+  <section class="setup-panel" id="setup-panel">
+    <div class="setup-card">
+      <div class="setup-icon">🃏</div>
+      <h1 class="setup-title">Flash Card Quiz</h1>
+      <p class="setup-desc">พลิกการ์ด 3D → ดูคำตอบ → กดว่า <strong>รู้แล้ว</strong> หรือ <strong>ยังไม่รู้</strong></p>
+      <div class="sheet-example">
+        <div class="example-header">📋 ตัวอย่างโครงสร้างชีต</div>
+        <table class="example-table">
+          <thead><tr><th>question</th><th>answer</th></tr></thead>
+          <tbody>
+            <tr><td>cat หมายความว่าอะไร?</td><td>แมว</td></tr>
+            <tr><td>ภาษาอังกฤษของ "สุนัข"?</td><td>dog</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="input-group">
+        <label class="input-label">🔗 Google Sheet URL</label>
+        <input type="url" id="sheet-url" class="sheet-input" placeholder="https://docs.google.com/spreadsheets/d/..."/>
+        <div class="input-hint">💡 แชร์เป็น <strong>Anyone with the link</strong> ก่อน</div>
+      </div>
+      <div class="input-group">
+        <label class="input-label">📄 ชื่อ Sheet (ไม่บังคับ)</label>
+        <input type="text" id="sheet-name" class="sheet-input" placeholder="Sheet1" value="Sheet1"/>
+      </div>
+      <div class="demo-divider"><span>— หรือ —</span></div>
+      <button class="btn btn-outline" onclick="loadDemo()">🎮 ลองกับข้อมูลตัวอย่าง</button>
+      <button class="btn btn-primary" id="btn-load" onclick="loadSheet()"><span>🚀</span> โหลดเกม</button>
+      <div class="error-box" id="error-box" style="display:none"></div>
+      <div class="loading-box" id="loading-setup" style="display:none"><div class="spinner"></div><span>กำลังโหลด...</span></div>
+    </div>
+  </section>
+
+  <!-- Game -->
+  <section class="game-panel" id="game-panel" style="display:none">
+    <div class="progress-wrap">
+      <div class="progress-info">
+        <span id="progress-text">การ์ดที่ 1 / 1</span>
+        <div class="progress-bar-wrap"><div class="progress-bar" id="progress-bar"></div></div>
+      </div>
+      <div class="game-actions">
+        <button class="btn btn-sm btn-ghost" onclick="restartGame()">🔄 เริ่มใหม่</button>
+        <button class="btn btn-sm btn-ghost" onclick="goBack()">⚙️ ตั้งค่า</button>
+      </div>
+    </div>
+
+    <div class="flashcard-scene" id="flashcard-scene">
+      <div class="flashcard" id="flashcard" onclick="flipCard()">
+        <div class="flashcard-face flashcard-front">
+          <div class="face-label">❓ คำถาม</div>
+          <div class="face-content" id="front-content">—</div>
+          <div class="flip-hint">คลิกเพื่อดูคำตอบ 👆</div>
+        </div>
+        <div class="flashcard-face flashcard-back">
+          <div class="face-label">✅ คำตอบ</div>
+          <div class="face-content" id="back-content">—</div>
+          <div class="flip-hint">คลิกเพื่อกลับด้านหน้า 👆</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="answer-btns" id="answer-btns" style="opacity:0;pointer-events:none">
+      <button class="btn-answer btn-unknown" id="btn-unknown" onclick="markCard(false)">
+        <span class="btn-answer-icon">❌</span>
+        <span class="btn-answer-text">ยังไม่รู้</span>
+        <span class="btn-answer-sub">วนกลับมาอีกครั้ง</span>
+      </button>
+      <button class="btn-answer btn-known" id="btn-known" onclick="markCard(true)">
+        <span class="btn-answer-icon">✅</span>
+        <span class="btn-answer-text">รู้แล้ว!</span>
+        <span class="btn-answer-sub">ข้ามไปการ์ดถัดไป</span>
+      </button>
+    </div>
+
+    <div class="keyboard-hint">⌨️ กด <kbd>←</kbd> = ยังไม่รู้ &nbsp;|&nbsp; <kbd>→</kbd> = รู้แล้ว &nbsp;|&nbsp; <kbd>Space</kbd> = พลิกการ์ด</div>
+  </section>
+
+  <!-- Win -->
+  <section class="win-panel" id="win-panel" style="display:none">
+    <div class="win-card">
+      <div class="win-emoji">🎓</div>
+      <h2 class="win-title">เยี่ยมมาก!</h2>
+      <p class="win-subtitle">คุณผ่านทุกการ์ดแล้ว!</p>
+      <div class="win-stats">
+        <div class="win-stat"><div class="win-stat-icon">✅</div><div class="win-stat-val" id="win-known">0</div><div class="win-stat-label">รู้แล้ว</div></div>
+        <div class="win-stat"><div class="win-stat-icon">🔄</div><div class="win-stat-val" id="win-rounds">0</div><div class="win-stat-label">รอบที่ผ่าน</div></div>
+        <div class="win-stat"><div class="win-stat-icon">📚</div><div class="win-stat-val" id="win-total">0</div><div class="win-stat-label">การ์ดทั้งหมด</div></div>
+      </div>
+      <div class="win-buttons">
+        <button class="btn btn-primary" onclick="restartGame()">🔄 เล่นอีกครั้ง</button>
+        <button class="btn btn-outline" onclick="goBack()">📊 เปลี่ยนชีต</button>
+      </div>
+      <div class="confetti-wrap" id="confetti-wrap"></div>
+    </div>
+  </section>
+
+</main>
+<script src="game.js"></script>
+</body>
+</html>
